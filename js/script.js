@@ -8,15 +8,18 @@ var selectedPiece = null;
 createBoard();
 createPieces();
 
-//definicion de la funcion
-function createCell(width, height){
+//definicion de la funcion            declarar parametro position al objeto
+function createCell(width, height, position){
 
 	var cellElement = document.createElement("div");
 	cellElement.style.width = width;
 	cellElement.style.height = height;
 	cellElement.style.border = "1px solid black";
 	cellElement.style.backgroundColor = "##EB5E00";
+	cellElement.dataset.position = position;
+	cellElement.dataset.fill = false;
 	cellElement.onclick = clickCell;
+
 	return cellElement;
 }
 
@@ -34,6 +37,10 @@ function createPiece(width, height, piece){
 	pieceElement.height = height;
 	pieceElement.border = "1px solid black";
 	pieceElement.src = piece.image;
+
+	pieceElement.dataset.position = piece.position;
+	pieceElement.dataset.moved = false;
+
 	pieceElement.onclick = clickPiece;
 	//mandar la pieza a la celda - agregar elementos al documento
 	cellElement.appendChild(pieceElement);
@@ -45,11 +52,14 @@ function createPiece(width, height, piece){
 function createBoard(){
 	var width = containerCell.offsetWidth;
 	var height =containerCell.offsetHeight;
+
 	width /= 4;
 	height /= 4;
+
 	for(var i=0; i<16; i++){
-		let cellElement = createCell(width, height);
+		let cellElement = createCell(width, height, i);
 		addCell(cellElement);
+
 	}
 }
 
@@ -72,8 +82,26 @@ function addCell(element){
 	containerCell.appendChild(element);
 }
 
+//para ver si la celda esta llena o no, para hacer el swap
+function verifyCell(element){
+	var fill = element.dataset.fill == "true";   //si es verdadero el element.dataset.fill, se va a guardaren fill
+	if(fill){
+		let piece = element.children[0];         //sacar el elemento de la celda
+		element.appendChild(selectedPiece);
+		addPieceByPosition(piece);
+	}else{
+		element.dataset.fill = true;
+		element.appendChild(selectedPiece);
+	}
+}
+
 function addPiece(element){
 	containerPiece.appendChild(element);
+}
+
+function addPieceByPosition(element){
+	var position = element.dataset.position;
+	containerPiece.children[position].appendChild(element);
 }
 
 
@@ -89,16 +117,29 @@ function generatePieceData(){
 }	
 
 function clickPiece(e){
-	var piece = e.target;
+	var piece = e.target;  //a qui optengo mi img
+	
+	if(piece.dataset.moved == "true"){     //verificamos si la pieza se movio
+		verifyCell(piece.parentElement);
+	}
 	selectedPiece = piece;
 }
 
 function clickCell(e){
-	if(selectedPiece){
-		let cell = e.target;
-		cell.appendChild(selectedPiece);
-	}else {
+
+	if (e.target.parentElement.dataset.fill == "true"){
+		if(selectedPiece){
+			let cell = e.target.parentElement;
+			verifyCell(cell);    //llamas a la función
+			selectedPiece = null;
+		}else {
 		console.log("selecciona una pieza");
+		}
+	}else{
+		e.target.dataset.fill = true;
+		selectedPiece.dataset.moved = true;
+		e.target.appendChild(selectedPiece);
+		selectedPiece = null;
 	}
 }
 
